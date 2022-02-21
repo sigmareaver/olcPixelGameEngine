@@ -958,7 +958,7 @@ namespace olc
 
 	public: // CONFIGURATION ROUTINES
 		// Layer targeting functions
-		void SetDrawTarget(uint8_t layer);
+		void SetDrawTarget(uint8_t layer, bool dirty = true);
 		void EnableLayer(uint8_t layer, bool b);
 		void SetLayerOffset(uint8_t layer, const olc::vf2d& offset);
 		void SetLayerOffset(uint8_t layer, float x, float y);
@@ -1156,17 +1156,17 @@ namespace olc
 
 	public:
 		// "Break In" Functions
-		void olc_UpdateMouse(int32_t x, int32_t y);
-		void olc_UpdateMouseWheel(int32_t delta);
-		void olc_UpdateWindowSize(int32_t x, int32_t y);
-		void olc_UpdateViewport();
+		virtual void olc_UpdateMouse(int32_t x, int32_t y);
+		virtual void olc_UpdateMouseWheel(int32_t delta);
+		virtual void olc_UpdateWindowSize(int32_t x, int32_t y);
+		virtual void olc_UpdateViewport();
 		void olc_ConstructFontSheet();
 		void olc_CoreUpdate();
 		void olc_PrepareEngine();
-		void olc_UpdateMouseState(int32_t button, bool state);
-		void olc_UpdateKeyState(int32_t key, bool state);
-		void olc_UpdateMouseFocus(bool state);
-		void olc_UpdateKeyFocus(bool state);
+		virtual void olc_UpdateMouseState(int32_t button, bool state);
+		virtual void olc_UpdateKeyState(int32_t key, bool state);
+		virtual void olc_UpdateMouseFocus(bool state);
+		virtual void olc_UpdateKeyFocus(bool state);
 		void olc_Terminate();
 		void olc_Reanimate();
 		bool olc_IsRunning();
@@ -1725,9 +1725,9 @@ namespace olc
 			layer.bUpdate = true;
 		}
 		SetDrawTarget(nullptr);
-		renderer->ClearBuffer(olc::BLACK, true);
+		renderer->ClearBuffer(olc::BLANK, true);
 		renderer->DisplayFrame();
-		renderer->ClearBuffer(olc::BLACK, true);
+		renderer->ClearBuffer(olc::BLANK, true);
 		renderer->UpdateViewport(vViewPos, vViewSize);
 	}
 
@@ -1769,12 +1769,12 @@ namespace olc
 		}
 	}
 
-	void PixelGameEngine::SetDrawTarget(uint8_t layer)
+	void PixelGameEngine::SetDrawTarget(uint8_t layer, bool dirty)
 	{
 		if (layer < vLayers.size())
 		{
 			pDrawTarget = vLayers[layer].pDrawTarget.Sprite();
-			vLayers[layer].bUpdate = true;
+			vLayers[layer].bUpdate = dirty;
 			nTargetLayer = layer;
 		}
 	}
@@ -3244,7 +3244,7 @@ namespace olc
 		{
 			nLastFPS = nFrameCount;
 			fFrameTimer -= 1.0f;
-			std::string sTitle = "OneLoneCoder.com - Pixel Game Engine - " + sAppName + " - FPS: " + std::to_string(nFrameCount);
+			std::string sTitle = sAppName + " - FPS: " + std::to_string(nFrameCount);
 			platform->SetWindowTitle(sTitle);
 			nFrameCount = 0;
 		}

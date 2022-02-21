@@ -4506,7 +4506,7 @@ namespace olc
 
 #if defined(OLC_IMAGE_STB)
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "stb/stb_image.h"
 namespace olc
 {
 	class ImageLoader_STB : public olc::ImageLoader

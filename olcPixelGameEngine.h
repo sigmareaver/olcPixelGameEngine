@@ -863,6 +863,7 @@ namespace olc
 		virtual void       UpdateViewport(const olc::vi2d& pos, const olc::vi2d& size) = 0;
 		virtual void       ClearBuffer(olc::Pixel p, bool bDepth) = 0;
 		static olc::PixelGameEngine* ptrPGE;
+		static void * renderer_handle;
 	};
 
 	class Platform
@@ -879,6 +880,7 @@ namespace olc
 		virtual olc::rcode StartSystemEventLoop() = 0;
 		virtual olc::rcode HandleSystemEvent() = 0;
 		static olc::PixelGameEngine* ptrPGE;
+		static void* platform_handle;
 	};
 
 	class PGEX;
@@ -1185,6 +1187,8 @@ namespace olc
 
 	private:
 		std::vector<olc::PGEX*> vExtensions;
+	public:
+		void* last_hwnd;
 	};
 
 
@@ -2465,8 +2469,8 @@ namespace olc
 
 		olc::vf2d vScreenSpaceDim =
 		{
-			vScreenSpacePos.x + (2.0f * (float(decal->sprite->width) * vInvScreenSize.x)) * scale.x,
-			vScreenSpacePos.y - (2.0f * (float(decal->sprite->height) * vInvScreenSize.y)) * scale.y
+			vScreenSpacePos.x + (2.0f * (float(decal ? decal->sprite->width : 1) * vInvScreenSize.x)) * scale.x,
+			vScreenSpacePos.y - (2.0f * (float(decal ? decal->sprite->height : 1) * vInvScreenSize.y)) * scale.y
 		};
 
 		DecalInstance di;
@@ -3320,7 +3324,9 @@ namespace olc
 	std::atomic<bool> PixelGameEngine::bAtomActive{ false };
 	olc::PixelGameEngine* olc::PGEX::pge = nullptr;
 	olc::PixelGameEngine* olc::Platform::ptrPGE = nullptr;
+	void* olc::Platform::platform_handle = nullptr;
 	olc::PixelGameEngine* olc::Renderer::ptrPGE = nullptr;
+	void* olc::Renderer::renderer_handle = nullptr;
 	std::unique_ptr<ImageLoader> olc::Sprite::loader = nullptr;
 };
 #pragma endregion 
@@ -3429,6 +3435,7 @@ namespace olc
 
 			if (!(glRenderContext = wglCreateContext(glDeviceContext))) return olc::FAIL;
 			wglMakeCurrent(glDeviceContext, glRenderContext);
+			renderer_handle = (void*)glRenderContext;
 
 			// Remove Frame cap
 			wglSwapInterval = (wglSwapInterval_t*)wglGetProcAddress("wglSwapIntervalEXT");
@@ -3905,6 +3912,7 @@ namespace olc
 
 			if (!(glRenderContext = wglCreateContext(glDeviceContext))) return olc::FAIL;
 			wglMakeCurrent(glDeviceContext, glRenderContext);
+			renderer_handle = (void*)glRenderContext;
 
 			// Set Vertical Sync
 			locSwapInterval = OGL_LOAD(locSwapInterval_t, "wglSwapIntervalEXT");
@@ -4660,6 +4668,8 @@ namespace olc
 
 			olc_hWnd = CreateWindowEx(dwExStyle, olcT("OLC_PIXEL_GAME_ENGINE"), olcT(""), dwStyle,
 				vTopLeft.x, vTopLeft.y, width, height, NULL, NULL, GetModuleHandle(nullptr), this);
+			platform_handle = (void*)olc_hWnd;
+			
 
 			// Create Keyboard Mapping
 			mapKeys[0x00] = Key::NONE;
@@ -4733,6 +4743,7 @@ namespace olc
 		// Windows Event Handler - this is statically connected to the windows event system
 		static LRESULT CALLBACK olc_WindowEvent(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		{
+			ptrPGE->last_hwnd = (void*)hWnd;
 			switch (uMsg)
 			{
 			case WM_MOUSEMOVE:
